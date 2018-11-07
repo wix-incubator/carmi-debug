@@ -1,0 +1,30 @@
+{
+  "name": "carmi-debug",
+  "version": "0.0.1",
+  "description": "visualise and debug carmi instances",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wix-incubator/carmi-debug.git"
+  },
+  "author": "Avi Marcus",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/wix-incubator/carmi-debug/issues"
+  },
+  "homepage": "https://github.com/wix-incubator/carmi-debug#readme",
+  "dependencies": {
+    "carlo": "^0.9.11"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
+  "private": false,
+  "devDependencies": {
+    "carmi": "^0.1.62",
+    "wnpm-ci": "latest"
+  }
+}
