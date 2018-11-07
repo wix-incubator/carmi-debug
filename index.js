@@ -26,7 +26,8 @@ function getInstanceData() {
   const nodesList = Object.keys(currentInstance)
     .filter(k => typeof currentInstance[k] !== 'function')
     .map(key => ({ id: key, label: key, title: JSON.stringify(currentInstance[key]) }))
-    .concat([{ id: 'output', label: 'output', title: output }]);
+    .concat([{ id: 'output', label: 'output', title: output }])
+    .map(val => ({...val, widthConstraint: 150, heightConstraint: 30}));
   // create an array with nodes
   const edges = [];
   function edgesInAst(topLevel, node) {
@@ -81,7 +82,7 @@ async function runSingleStep(step) {
       edges: new vis.DataSet(edges)
     };
     var layout = {
-      hierarchical: { enabled: true, direction: 'RL', sortMethod: 'directed' }
+      hierarchical: { enabled: true, direction: 'RL', sortMethod: 'directed', levelSeparation: 250 }
     };
     var options = { layout };
     new vis.Network(container, data, options);
