@@ -3,7 +3,11 @@ const path = require('path');
 let isTabOpen = false;
 let currentInstance = null;
 let currentVis = null;
-let app = null;
+let inMiddleOfStep = false;
+let app = false;
+
+const pendingDebugs = [];
+const stepsToPromises = new WeakMap();
 
 function getVis() {
   console.log('getVis', currentVis);
@@ -67,40 +71,57 @@ async function openTab() {
   }
 }
 
-async function debugInstance(instance, blocking) {
+async function runSingleStep(step) {
+  await openTab();
+  const res = app.evaluate(({ nodesList, edges, blocking }) => {
+    // create a network
+    var container = document.getElementById('mynetwork');
+    var data = {
+      nodes: new vis.DataSet(nodesList),
+      edges: new vis.DataSet(edges)
+    };
+    var layout = {
+      hierarchical: { enabled: true, direction: 'RL', sortMethod: 'directed' }
+    };
+    var options = { layout };
+    new vis.Network(container, data, options);
+    const btn = document.getElementById('step');
+    btn.style.display = blocking ? '' : 'none';
+    console.log({ blocking });
+    if (blocking) {
+      const promise = new Promise(resolve => {
+        window.resolveWait = resolve;
+      });
+      return promise;
+    }
+  }, step);
+  await res;
+}
+
+async function scheduleNextStep(step) {
+  pendingDebugs.push(step);
+  if (inMiddleOfStep) {
+    return;
+  }
+  inMiddleOfStep = true;
+  while (pendingDebugs.length) {
+    step = pendingDebugs.shift();
+    await runSingleStep(step);
+    stepsToPromises.get(step)();
+  }
+  inMiddleOfStep = false;
+}
+
+function debugInstance(instance, blocking) {
   blocking = blocking || false;
   currentInstance = instance;
   currentVis = getInstanceData();
-  await openTab();
-  const res = app.evaluate(
-    ({ nodesList, edges, blocking }) => {
-      // create a network
-      console.log(vis);
-      var container = document.getElementById('mynetwork');
-      var data = {
-        nodes: new vis.DataSet(nodesList),
-        edges: new vis.DataSet(edges)
-      };
-      var layout = {
-        hierarchical: { enabled: true, direction: 'RL', sortMethod: 'directed' }
-      };
-      var options = { layout };
-      new vis.Network(container, data, options);
-      const btn = document.getElementById('step');
-      btn.style.display = blocking ? '' : 'none';
-      console.log({ blocking });
-      if (blocking) {
-        const promise = new Promise(resolve => {
-          window.resolveWait = resolve;
-        });
-        return promise;
-      }
-    },
-    { ...currentVis, blocking }
-  );
-  if (blocking) {
-    await res;
-  }
+  const nextStep = { ...currentVis, blocking };
+  const promise = new Promise(resolve => {
+    stepsToPromises.set(nextStep, resolve);
+  });
+  scheduleNextStep(nextStep);
+  return promise;
 }
 
 module.exports = debugInstance;

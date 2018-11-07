@@ -9,10 +9,10 @@ async function test() {
 
   const sourceCode = await compile(model, { compiler, debug: true });
   const optCode = eval(sourceCode);
-  const inst = optCode([false, true, false], {});
-  await carmiDebug(inst, true);
+  const inst = optCode([false, 1, 0], {});
+  carmiDebug(inst, true);
   inst.set(0, true);
-  await carmiDebug(inst, true);
+  carmiDebug(inst, true);
 
   console.log('done');
 }
