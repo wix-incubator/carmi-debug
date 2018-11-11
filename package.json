@@ -24,7 +24,9 @@
   },
   "private": false,
   "devDependencies": {
-    "carmi": "^0.1.62",
     "wnpm-ci": "latest"
+  },
+  "peerDependencies": {
+    "carmi": "^0.1.62"
   }
 }

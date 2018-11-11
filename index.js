@@ -1,5 +1,25 @@
 const carlo = require('carlo');
 const path = require('path');
+const SimpleCompiler = require('carmi/src/simple-compiler');
+const Lang = require('carmi/src/lang');
+
+function valToTokenMaybe(token) {
+  if (typeof token === 'string') {
+    if (token[0] === '*' && token[token.length - 1] === '*') {
+      return new Lang.Token(token.replace(/\*/g, ''));
+    }
+  }
+  return token;
+}
+
+function convertASTToExpr(expr) {
+  if (!Array.isArray(expr)) {
+    return valToTokenMaybe(expr);
+  }
+  const token = new Lang.Token(expr[0].replace(/\*/g, ''));
+  return Lang.Expr(token, ...expr.slice(1).map(item => convertASTToExpr(item)));
+}
+
 let isTabOpen = false;
 let currentInstance = null;
 let currentVis = null;
@@ -27,32 +47,77 @@ function getInstanceData() {
     .filter(k => typeof currentInstance[k] !== 'function')
     .map(key => ({ id: key, label: key, title: JSON.stringify(currentInstance[key]) }))
     .concat([{ id: 'output', label: 'output', title: output }])
-    .map(val => ({...val, widthConstraint: 150, heightConstraint: 30}));
+    .map(val => ({ ...val, widthConstraint: 150, heightConstraint: 30 }));
   // create an array with nodes
-  const edges = [];
-  function edgesInAst(topLevel, node) {
-    if (node === '*root*') {
-      edges.push({ from: '$model', to: topLevel, arrows: 'to' });
+  const edgesMap = {};
+
+  function addEdge(edge) {
+    const key = `${edge.from}->${edge.to}`;
+    console.log(key, edge);
+    edgesMap[key] = edgesMap[key] || edge;
+  }
+  function edgesInAst(topLevel, expr) {
+    if (expr === '*root*') {
+      addEdge({ from: '$model', to: topLevel, arrows: 'to', dashes: true });
       return;
     }
-    if (!Array.isArray(node)) {
+    if (!Array.isArray(expr)) {
       return;
     }
-    if (node[0] === '*get*' && node[2] === '*topLevel*') {
-      edges.push({ from: node[1], to: topLevel, arrows: 'to' });
+    if (expr[0] === '*get*' && expr[2] === '*topLevel*') {
+      addEdge({ from: expr[1], to: topLevel, arrows: 'to', dashes: true });
     }
-    node.forEach(child => edgesInAst(topLevel, child));
+    if (expr[0] === '*recursiveMapValues*' || expr[0] === '*recursiveMap*') {
+      addEdge({ from: topLevel, to: topLevel, arrows: 'to', selfReferenceSize: 10 });
+    }
+    expr.forEach(child => edgesInAst(topLevel, child));
   }
   const ast = currentInstance.$ast();
 
+  function lastTopLevelInExpr(expr) {
+    if (!Array.isArray(expr)) {
+      if (expr === '*root*') {
+        return '$model';
+      }
+      return null;
+    }
+    if (expr[0] === '*func*') {
+      return null;
+    }
+    if (expr[0] === '*get*' && expr[2] === '*topLevel*') {
+      return expr[1];
+    }
+
+    for (let i = expr.length - 1; i >= 0; i--) {
+      const res = lastTopLevelInExpr(expr[i]);
+      if (res) {
+        return res;
+      }
+    }
+    return null;
+  }
+
+  function mainEdgesInAst(topLevel, expr) {
+    const label = expr[0].replace(/\*/g, '');
+    const from = lastTopLevelInExpr(expr);
+    expr = convertASTToExpr(expr);
+    console.log(expr);
+    const fnAcc = [];
+    const naiveCompiler = new SimpleCompiler({ [topLevel]: expr });
+    naiveCompiler.buildExprFunctions(fnAcc, expr);
+    const title = fnAcc.join('\n');
+    addEdge({ from, to: topLevel, arrows: 'to', label, title });
+  }
+
+  Object.keys(ast).forEach(topLevel => mainEdgesInAst(topLevel, ast[topLevel]));
   Object.keys(ast).forEach(topLevel => edgesInAst(topLevel, ast[topLevel]));
   Object.keys(ast).forEach(topLevel => {
     if (topLevel[0] !== '$') {
-      edges.push({ from: topLevel, to: 'output', arrows: 'to' });
+      addEdge({ from: topLevel, to: 'output', arrows: 'to' });
     }
   });
-
-  console.log('get', { node: { nodesList, edges } });
+  const edges = Object.values(edgesMap);
+  console.log('get', JSON.stringify({ nodesList, edges }, null, 2));
 
   return { nodesList, edges };
 }
