@@ -1,6 +1,8 @@
 const { getData } = require('./data');
 const { filesDiv, codeDiv } = require('./dom');
-const hljs = require('highlightjs');
+const hljs = require('highlight.js/lib/highlight');
+const javascript = require('highlight.js/lib/languages/javascript');
+hljs.registerLanguage('javascript', javascript);
 
 function toLineCol(str) {
   const rawParts = str.split('_');
