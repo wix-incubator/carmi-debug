@@ -1,5 +1,6 @@
 const carlo = require('carlo');
 const path = require('path');
+const ARSON = require('arson');
 
 let isTabOpen = false;
 let currentInstance = null;
@@ -17,7 +18,7 @@ function getVis() {
 }
 
 function getInstanceData() {
-  const value = JSON.stringify(currentInstance);
+  const value = ARSON.stringify(currentInstance);
   const ast = currentInstance.$ast();
   const sources = currentInstance.$source();
   return { value, ast, sources };
@@ -46,14 +47,9 @@ async function runSingleStep() {
   const res = app.evaluate(() => {
     // create a network
     async function runStepInBrowser() {
-      let { value, ast, sources, blocking } = await getCurrentStep();
-      value = JSON.parse(value);
-      setData({ value, ast, sources })
-      buildSources();
-      const btn = document.getElementById('step');
-      btn.style.display = blocking ? '' : 'none';
-      console.log({ blocking });
-      if (blocking) {
+      const step = await getCurrentStep();
+      updateViewer(step);
+      if (step.blocking) {
         const promise = new Promise(resolve => {
           window.resolveWait = resolve;
         });

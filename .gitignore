@@ -6,4 +6,5 @@ build
 dist/
 yarn.lock
 /target/
+www/bundle.js
 **/.DS_Store
