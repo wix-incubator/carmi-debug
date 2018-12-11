@@ -36,8 +36,5 @@
     "webpack": "^4.27.1",
     "webpack-cli": "^3.1.2",
     "wnpm-ci": "latest"
-  },
-  "peerDependencies": {
-    "carmi": "^0.1.62"
   }
 }
