@@ -12,11 +12,6 @@ let currentStep = null;
 const pendingDebugs = [];
 const stepsToPromises = new WeakMap();
 
-function getVis() {
-  console.log('getVis', currentVis);
-  return currentVis;
-}
-
 function getInstanceData() {
   const value = ARSON.stringify(currentInstance);
   const ast = currentInstance.$ast();
