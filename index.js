@@ -26,7 +26,11 @@ async function openTab() {
 
     app.on('exit', async () => {
       isTabOpen = false;
-      await carlo.close();
+      try {
+        await carlo.close();
+      } catch (e) {
+
+      }
     });
 
     app.serveFolder(path.join(__dirname, 'www'));

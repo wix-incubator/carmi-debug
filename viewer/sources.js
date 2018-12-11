@@ -7,7 +7,7 @@ hljs.registerLanguage('javascript', javascript);
 function toLineCol(str) {
   const rawParts = str.split('_');
   const parts = rawParts.slice(2).map(v => parseInt(v, 10));
-  return { line: parts[0] - 1, col: parts[1] - 1 + rawParts[0].length - 1 };
+  return { line: parts[0] - 1, col: parts[1] - 1 };
 }
 
 function tryStringify(val) {
