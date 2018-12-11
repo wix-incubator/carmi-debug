@@ -12,7 +12,7 @@ module.exports = {
   plugins: [
     new webpack.ContextReplacementPlugin(
       /highlight\.js\/lib\/languages$/,
-      new RegExp(`^./(${['javascript'].join('|')})$`),
+      new RegExp(`^./(${['javascript'].join('|')})$`)
     )
-  ],
+  ]
 };
